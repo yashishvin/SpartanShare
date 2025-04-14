@@ -1,4 +1,4 @@
-require('dotenv').config(); // Load environment variables
+
 
 const express = require('express');
 const cors = require('cors');
@@ -20,27 +20,6 @@ const oAuth2Client = new OAuth2Client(
 // Health check
 app.get('/', (req, res) => {
   res.send('Server is running');
-});
-
-// Handle Google auth code exchange
-app.post('/auth/google', async (req, res) => {
-  try {
-    const { code } = req.body;
-
-    if (!code) {
-      return res.status(400).json({ error: 'Missing code in request body' });
-    }
-
-    console.log('Received auth code:', code);
-
-    const { tokens } = await oAuth2Client.getToken(code); // Exchange code for tokens
-    console.log('Tokens:', tokens);
-
-    res.json(tokens);
-  } catch (error) {
-    console.error('Error during token exchange:', error.response?.data || error.message);
-    res.status(400).json({ error: error.message });
-  }
 });
 
 app.listen(port, () => {
