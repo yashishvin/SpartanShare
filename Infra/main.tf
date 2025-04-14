@@ -11,7 +11,7 @@ provider "aws" {
   region  = "us-west-1"
 }
 
-/*resource "tls_private_key" "key" {
+resource "tls_private_key" "key" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
@@ -23,7 +23,7 @@ resource "aws_key_pair" "key_pair" {
   provisioner "local-exec" {
     command = "echo '${tls_private_key.key.private_key_pem}' > ${path.module}/key.pem && chmod 0700 ${path.module}/key.pem"
   }
-}*/
+}
 
 resource "aws_instance" "app_server" {
   ami           = "ami-0d53d72369335a9d6"  # Ubuntu 22.04 free tier ami in us-west-1
