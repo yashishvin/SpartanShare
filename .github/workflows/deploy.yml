@@ -53,7 +53,7 @@ jobs:
 
             cd project/backend
             npm install
-            npm start
+            pm2 start server.js --name backend
           EOF
      
 
