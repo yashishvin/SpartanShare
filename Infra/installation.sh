@@ -8,18 +8,8 @@ sudo apt install -y curl git nginx
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo bash -
 sudo apt install -y nodejs
 
-# Clone your repo (replace with your actual repo)
-# cd /home/ubuntu
- #git clone https://github.com/yashishvin/SpartanShare.git
- #cd SpartanShare
-
-# # Build the React app
- #npm install
- #npm run build
-
 # # Move build to nginx directory
   rm -rf /var/www/html/*
-  #cp -r build/* /var/www/html/
 
 # Clean up existing site configs
 rm -f /etc/nginx/sites-enabled/*
