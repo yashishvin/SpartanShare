@@ -20,6 +20,10 @@ function App() {
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/folder/:folderId" element={<Dashboard />} />
+              <Route path="/shared" element={<Dashboard mode="shared" />} />
+              <Route path="/watchparty" element={<Dashboard mode="watchparty" />} />
+              <Route path="/trash" element={<Dashboard mode="trash" />} />
               {/* Add more protected routes here */}
             </Route>
             
