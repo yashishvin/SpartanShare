@@ -1,27 +1,46 @@
-
-
 const express = require('express');
 const cors = require('cors');
-const { OAuth2Client } = require('google-auth-library');
+const connectDB = require('./config/db');
+const dotenv = require('dotenv');
 
+// Load env vars
+dotenv.config();
+
+// Connect to database
+connectDB();
+
+// Initialize app
 const app = express();
-const port = 5001;
 
-app.use(cors());
+const corsOptions = {
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000','https://13.52.246.199'], // Allow both localhost variations
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  credentials: true,
+  maxAge: 86400 // 24 hours
+};
+
+// Configure CORS more explicitly
+app.use(cors( corsOptions));
+
+// Body parser middleware
 app.use(express.json());
 
-// Using the REACT_APP prefix (from your backend .env file)
-const oAuth2Client = new OAuth2Client(
-  process.env.REACT_APP_GOOGLE_CLIENT_ID,    // Accessing the variable prefixed with REACT_APP_ in the backend
-  process.env.REACT_APP_GOOGLE_CLIENT_SECRET, // Same here
-  'postmessage'  // Critical for frontend auth flow
-);
+// Routes
+app.use('/api/auth', require('./routes/api/auth'));
+// Add more routes here
 
-// Health check
-app.get('/', (req, res) => {
-  res.send('Server is running');
+// Error handler middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    message: 'Server Error'
+  });
 });
 
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-});
+console.log('The port is' + process.env.PORT);
+// Start server
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

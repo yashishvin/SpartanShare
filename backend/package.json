@@ -1,23 +1,47 @@
 {
-  "name": "backend",
+  "name": "spartan-share",
   "version": "1.0.0",
-  "main": "server.js",
+  "description": "A MERN stack application for SJSU students",
+  "main": "index.js",
+  "type": "commonjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node ./server.js",
+    "server": "nodemon ./server.js",
+    "client": "npm start --prefix client",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "install-all": "npm install && npm install --prefix client && npm install --prefix backend",
+    "lint": "eslint .",
+    "format": "prettier --write ."
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "mern",
+    "react",
+    "node",
+    "express",
+    "mongodb"
+  ],
+  "author": "Your Name",
   "license": "ISC",
-  "description": "",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/spartan-share.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/spartan-share/issues"
+  },
+  "homepage": "https://github.com/your-username/spartan-share#readme",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5"
+  },
   "dependencies": {
-    "cors": "^2.8.5",
     "express": "^5.1.0",
     "google-auth-library": "^9.15.1",
-    "mongoose": "^8.13.2"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.9"
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.14.1"
   }
 }
