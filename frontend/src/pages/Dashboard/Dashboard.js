@@ -5,6 +5,8 @@ import DashboardHeader from '../../components/layout/Header';
 import FilesContent from '../../components/layout/FileContent';
 import SideNavigation from '../../components/layout/Sidebar';
 import PdfSummaryDrawer from '../../components/layout//PdfSummaryDrawer';
+
+
 import { useFileManager } from '../../hooks/useFileManager';
 import { useLocation, useParams } from 'react-router-dom';
 
@@ -13,6 +15,8 @@ const Dashboard = ({ mode = 'home' }) => {
   const [showSummary, setShowSummary] = useState(false);
   const [summaryData, setSummaryData] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+
   
   const location = useLocation();
   const { folderId } = useParams();
@@ -65,6 +69,12 @@ const Dashboard = ({ mode = 'home' }) => {
     }
   };
 
+  const handleFileUpdate = () => {
+    // Refresh files list (e.g., by calling your API)
+    fetchFiles();
+  };
+  
+
   return (
     <Box sx={{ display: 'flex', height: '100vh' }}>
       {/* Sidebar */}
@@ -76,6 +86,7 @@ const Dashboard = ({ mode = 'home' }) => {
           title={getSectionTitle()}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          onFileUpdate={handleFileUpdate}
         />
         
         <FilesContent 

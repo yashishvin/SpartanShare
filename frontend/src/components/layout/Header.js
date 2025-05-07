@@ -1,9 +1,24 @@
-import React from 'react';
-import { Search, Upload } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Upload, Grid, List } from 'lucide-react'; // Added Grid and List icons
 import { useAuth } from '../../context/AuthContext';
 
-const Header = ({ onOpenUploadDialog }) => {
+// Import FileUploadDialog
+import FileUploadDialog from './FileUploadDialog';
+
+const Header = ({ title, viewMode, onViewModeChange, onFileUpdate }) => {
   const { user, logout } = useAuth();
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [currentFolder, setCurrentFolder] = useState(null);
+  
+  const handleOpenUploadDialog = () => setUploadDialogOpen(true);
+  const handleCloseUploadDialog = () => setUploadDialogOpen(false);
+  
+  const handleUploadComplete = () => {
+    if (onFileUpdate) {
+      onFileUpdate();
+    }
+    handleCloseUploadDialog();
+  };
   
   const getInitials = (name) => {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
@@ -14,7 +29,7 @@ const Header = ({ onOpenUploadDialog }) => {
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <div className="bg-sjsu-gold text-sjsu-blue font-bold text-xl p-2 rounded">SS</div>
-          <h1 className="text-xl font-bold">Spartan Share</h1>
+          <h1 className="text-xl font-bold">{title || "Spartan Share"}</h1> {/* Use the title prop */}
         </div>
         <div className="flex-1 mx-4 relative">
           <div className="relative">
@@ -27,9 +42,25 @@ const Header = ({ onOpenUploadDialog }) => {
           </div>
         </div>
         <div className="flex items-center space-x-2">
+          {/* View mode toggle */}
+          <div className="flex bg-blue-800 rounded-lg mr-2">
+            <button 
+              className={`p-2 rounded-l-lg ${viewMode === 'grid' ? 'bg-blue-700' : ''}`}
+              onClick={() => onViewModeChange && onViewModeChange('grid')}
+            >
+              <Grid size={18} className="text-white" />
+            </button>
+            <button 
+              className={`p-2 rounded-r-lg ${viewMode === 'list' ? 'bg-blue-700' : ''}`}
+              onClick={() => onViewModeChange && onViewModeChange('list')}
+            >
+              <List size={18} className="text-white" />
+            </button>
+          </div>
+          
           <button 
             className="bg-sjsu-gold hover:bg-yellow-600 text-sjsu-blue font-bold py-2 px-4 rounded-lg flex items-center space-x-1"
-            onClick={onOpenUploadDialog}
+            onClick={handleOpenUploadDialog}
           >
             <Upload size={18} />
             <span>Upload</span>
@@ -53,6 +84,16 @@ const Header = ({ onOpenUploadDialog }) => {
           </div>
         </div>
       </div>
+      
+      {/* File Upload Dialog */}
+      {uploadDialogOpen && (
+        <FileUploadDialog
+          open={uploadDialogOpen}
+          onClose={handleCloseUploadDialog}
+          currentFolder={currentFolder}
+          onUploadComplete={handleUploadComplete}
+        />
+      )}
     </header>
   );
 };
