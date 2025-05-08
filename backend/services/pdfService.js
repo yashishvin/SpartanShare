@@ -3,8 +3,9 @@ const fs = require('fs').promises;
 const pdf = require('pdf-parse');
 const fetch = require('node-fetch');
 const s3Service = require('./s3Service');
+const OpenAI = require('openai'); 
 
-// Function to extract text from PDF
+// Function to extract text from PDF (unchanged)
 const extractTextFromPDF = async (buffer) => {
   try {
     const data = await pdf(buffer);
@@ -15,111 +16,64 @@ const extractTextFromPDF = async (buffer) => {
   }
 };
 
-// Function to summarize text using the BART model
+// Updated function to summarize text using OpenAI
 const summarizeText = async (text) => {
   try {
-    // Truncate text if too long (BART has token limits)
-    const truncatedText = text.slice(0, 5000); // BART can handle ~1024 tokens
+    // OpenAI has larger context windows than BART, but still has limits
+    // GPT-4o can handle around 128,000 tokens
+    // For longer documents, you might need to chunk the text
+    const truncatedText = text.slice(0, 25000); // Increased from 5000 for BART
     
-    // Call Hugging Face Inference API
-    const response = await fetch(
-      'https://api-inference.huggingface.co/models/facebook/bart-large-cnn',
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-          'Content-Type': 'application/json',
+    // Initialize OpenAI client
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY, // Make sure to set this environment variable
+    });
+    
+    // Call OpenAI API
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // Using the latest model, you can change to gpt-4-turbo or others
+      messages: [
+        {
+          role: "system",
+          content: "You are a highly skilled assistant specialized in summarizing PDF documents. Create concise, informative summaries that highlight the main points."
         },
-        method: 'POST',
-        body: JSON.stringify({
-          inputs: truncatedText,
-          parameters: {
-            max_length: 250,
-            min_length: 100,
-            do_sample: false,
-          },
-        }),
-      }
-    );
+        {
+          role: "user",
+          content: `Please summarize the following text and extract the key points and main topics:
+          
+        ${truncatedText}
+
+        Return your response in JSON format with the following structure:
+        {
+          "summary": "A comprehensive summary of the document",
+          "mainPoints": ["point 1", "point 2", "point 3", "point 4", "point 5"],
+          "topics": ["topic1", "topic2", "topic3", "topic4", "topic5"]
+        }`
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.3, // Lower temperature for more focused/deterministic outputs
+    });
     
-    const result = await response.json();
+    // Parse the response
+    const result = JSON.parse(response.choices[0].message.content);
     
-    // Check for errors
-    if (result.error) {
-      console.error('Hugging Face API error:', result.error);
-      throw new Error(result.error);
-    }
-    
-    // Extract summary
-    const summaryText = result[0].summary_text;
-    
-    // Extract key points from the summary
-    const keyPoints = extractKeyPoints(summaryText);
-    
-    // Extract topics from the original text
-    const topics = extractTopics(truncatedText);
-    
+    // Return in the same format your existing code expects
     return {
-      mainPoints: keyPoints,
-      summary: summaryText,
-      topics: topics
+      mainPoints: result.mainPoints,
+      summary: result.summary,
+      topics: result.topics
     };
   } catch (error) {
-    console.error('Error summarizing text:', error);
+    console.error('Error summarizing text with OpenAI:', error);
     throw new Error('Failed to generate summary');
   }
 };
 
-// Extract key points from summary (simple approach - sentence splitting)
-const extractKeyPoints = (summary) => {
-  // Split by sentences
-  const sentences = summary
-    .split(/(?<=[.!?])\s+/)
-    .filter(s => s.trim().length > 20) // Filter out very short sentences
-    .map(s => s.trim());
-  
-  // Take up to 5 sentences as key points
-  return sentences.slice(0, 5);
-};
+// The extractKeyPoints and extractTopics functions are no longer needed
+// as OpenAI will handle this directly, but you can keep them as fallbacks
 
-// Extract topics using basic keyword frequency analysis
-const extractTopics = (text) => {
-  // Convert to lowercase and remove punctuation
-  const cleanedText = text.toLowerCase().replace(/[^\w\s]/g, ' ');
-  
-  // Split into words
-  const words = cleanedText.split(/\s+/);
-  
-  // Common stop words to filter out
-  const stopWords = [
-    'the', 'and', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 
-    'is', 'are', 'be', 'was', 'were', 'this', 'that', 'these', 'those', 
-    'there', 'here', 'from', 'have', 'has', 'had', 'not', 'by', 'but', 
-    'or', 'as', 'what', 'when', 'where', 'who', 'how', 'why', 'which',
-    'their', 'they', 'them', 'then', 'than', 'can', 'could', 'would',
-    'should', 'will', 'may', 'might', 'must', 'about'
-  ];
-  
-  // Filter out stop words and short words
-  const filteredWords = words.filter(word => 
-    !stopWords.includes(word) && word.length > 3
-  );
-  
-  // Count word frequencies
-  const frequencies = {};
-  filteredWords.forEach(word => {
-    frequencies[word] = (frequencies[word] || 0) + 1;
-  });
-  
-  // Sort by frequency and take top 5
-  const topics = Object.entries(frequencies)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([word]) => word);
-  
-  return topics;
-};
-
-// Generate summary for a PDF file stored in S3
+// Generate summary for a PDF file stored in S3 (minimal changes)
 const generatePDFSummary = async (fileKey) => {
   try {
     // Download file from S3
