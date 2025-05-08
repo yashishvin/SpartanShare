@@ -1,7 +1,7 @@
-// src/services/fileService.js
+// frontend/src/services/fileService.js
 import api from './api';
 
-// Upload a file to the server
+// Upload a file
 export const uploadFile = async (file, folderId = null, onProgress) => {
   const formData = new FormData();
   formData.append('file', file);
@@ -14,35 +14,67 @@ export const uploadFile = async (file, folderId = null, onProgress) => {
     headers: {
       'Content-Type': 'multipart/form-data'
     },
-    onUploadProgress: onProgress
+    onUploadProgress: onProgress ? 
+      (progressEvent) => {
+        const percentCompleted = Math.round(
+          (progressEvent.loaded * 100) / progressEvent.total
+        );
+        onProgress(percentCompleted);
+      } : undefined
   });
 };
 
-// Get a download URL for a file
-export const getFileDownloadUrl = async (fileId) => {
-  const response = await api.get(`/files/download/${fileId}`);
-  return response.data.url;
+// Create a folder
+export const createFolder = async (name, parentId = null) => {
+  return api.post('/files/folder', {
+    name,
+    parent: parentId
+  });
 };
 
-// List files in a folder
-export const listFiles = async (folderId = null) => {
-  const url = folderId 
-    ? `/files?parent=${folderId}` 
-    : '/files';
-    
+// Get files in a folder
+export const getFiles = async (folderId = null) => {
+  const url = folderId ? 
+    `/files?parent=${folderId}` : 
+    '/files';
+  
   const response = await api.get(url);
   return response.data.files;
 };
 
-// Delete a file
-export const deleteFile = async (fileId) => {
-  return api.delete(`/files/${fileId}`);
+// Get shared files
+export const getSharedFiles = async () => {
+  const response = await api.get('/files/shared');
+  return response.data.files;
+};
+
+// Get file download URL
+export const getFileUrl = async (fileId) => {
+  const response = await api.get(`/files/download/${fileId}`);
+  return response.data.url;
 };
 
 // Share a file with another user
-export const shareFile = async (fileId, email, permission) => {
-  return api.post(`/files/${fileId}/share`, {
+export const shareFile = async (fileId, email, permission = 'viewer') => {
+  const response = await api.post(`/files/${fileId}/share`, {
     email,
     permission
   });
+  return response.data;
+};
+
+// Delete a file
+export const deleteFile = async (fileId, permanent = false) => {
+  const url = permanent ? 
+    `/files/${fileId}?permanent=true` : 
+    `/files/${fileId}`;
+  
+  const response = await api.delete(url);
+  return response.data;
+};
+
+// Toggle star status
+export const toggleStar = async (fileId) => {
+  const response = await api.patch(`/files/${fileId}/star`);
+  return response.data;
 };

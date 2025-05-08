@@ -1,4 +1,4 @@
-// src/components/dialogs/FileUploadDialog.js
+// frontend/src/components/dialogs/FileUploadDialog.js
 import React, { useState, useRef } from 'react';
 import { 
   Dialog, DialogTitle, DialogContent, DialogActions,
@@ -24,19 +24,11 @@ const FileUploadDialog = ({ open, onClose, currentFolder, onUploadComplete }) =>
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    e.currentTarget.classList.add('drag-active');
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.currentTarget.classList.remove('drag-active');
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    e.currentTarget.classList.remove('drag-active');
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       addFiles(e.dataTransfer.files);
@@ -86,19 +78,21 @@ const FileUploadDialog = ({ open, onClose, currentFolder, onUploadComplete }) =>
         newProgress[id] = 0;
         setProgress({ ...newProgress });
         
-        await uploadFile(file, currentFolder, (progressEvent) => {
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-          newProgress[id] = percentCompleted;
-          setProgress({ ...newProgress });
-        });
+        // Upload to backend
+        await uploadFile(
+          file, 
+          currentFolder, 
+          (percent) => {
+            newProgress[id] = percent;
+            setProgress({ ...newProgress });
+          }
+        );
         
         newProgress[id] = 100;
         setProgress({ ...newProgress });
       } catch (error) {
         console.error(`Error uploading file ${file.name}:`, error);
-        newErrors[id] = error.message || 'Upload failed';
+        newErrors[id] = error.response?.data?.message || 'Upload failed';
         setErrors({ ...newErrors });
       }
     }
@@ -108,30 +102,20 @@ const FileUploadDialog = ({ open, onClose, currentFolder, onUploadComplete }) =>
     // If no errors, close dialog and notify parent
     if (Object.keys(newErrors).length === 0) {
       onUploadComplete();
-      onClose();
-    }
-  };
-
-  const handleClose = () => {
-    if (!uploading) {
-      setFiles([]);
-      setProgress({});
-      setErrors({});
-      onClose();
     }
   };
 
   return (
     <Dialog 
       open={open} 
-      onClose={handleClose}
+      onClose={() => !uploading && onClose()}
       maxWidth="md"
       fullWidth
     >
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h6">Upload Files</Typography>
-          <IconButton onClick={handleClose} disabled={uploading}>
+          <IconButton onClick={onClose} disabled={uploading}>
             <CloseIcon />
           </IconButton>
         </Box>
@@ -147,12 +131,9 @@ const FileUploadDialog = ({ open, onClose, currentFolder, onUploadComplete }) =>
             mb: 3,
             textAlign: 'center',
             backgroundColor: 'action.hover',
-            '&.drag-active': {
-              backgroundColor: 'action.selected',
-            }
+            cursor: 'pointer'
           }}
           onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current.click()}
         >
@@ -211,7 +192,7 @@ const FileUploadDialog = ({ open, onClose, currentFolder, onUploadComplete }) =>
       </DialogContent>
       <DialogActions>
         <Button 
-          onClick={handleClose} 
+          onClick={onClose} 
           disabled={uploading}
         >
           Cancel
