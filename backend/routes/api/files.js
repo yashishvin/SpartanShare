@@ -22,6 +22,9 @@ router.get('/', auth, fileController.getFiles);
 // Get shared files route
 router.get('/shared', auth, fileController.getSharedFiles);
 
+//Get the summary of the PDF
+router.get('/:id/summary', auth, fileController.summarizePDF);
+
 // Get file download URL
 router.get('/download/:id', auth, fileController.getFileUrl);
 
@@ -33,5 +36,14 @@ router.delete('/:id', auth, fileController.deleteFile);
 
 // Toggle star status
 router.patch('/:id/star', auth, fileController.toggleStar);
+
+// Get files in trash
+router.get('/trash', auth, fileController.getTrash);
+
+// Restore file from trash
+router.post('/:id/restore', auth, fileController.restoreFile);
+
+// Empty trash
+router.delete('/trash/empty', auth, fileController.emptyTrash);
 
 module.exports = router;

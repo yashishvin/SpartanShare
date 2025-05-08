@@ -48,6 +48,19 @@ const FileSchema = new mongoose.Schema({
       default: 'viewer'
     }
   }],
+  summary: {
+    mainPoints: [String],
+    summaryText: String,
+    topics: [String],
+    generated: {
+      type: Boolean,
+      default: false
+    },
+    generatedAt: {
+      type: Date,
+      default: null
+    }
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -55,6 +68,14 @@ const FileSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  deleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: {
+    type: Date,
+    default: null
   }
 });
 

@@ -19,7 +19,10 @@ import {
   Delete as DeleteIcon,
   CloudDownload as DownloadIcon,
   Create as CreateIcon,
-  CreateNewFolder as CreateNewFolderIcon
+  CreateNewFolder as CreateNewFolderIcon,
+  RestoreFromTrash as RestoreIcon,
+  DeleteForever as DeleteForeverIcon,
+  DescriptionOutlined as DescriptionIcon
 } from '@mui/icons-material';
 import DashboardHeader from '../../components/layout/Header';
 import FilesContent from '../../components/layout/FileContent';
@@ -28,6 +31,7 @@ import PdfSummaryDrawer from '../../components/layout/PdfSummaryDrawer';
 import FileUploadDialog from '../../components/layout/FileUploadDialog';
 import ShareDialog from '../../components/layout/ShareDialog';
 import CreateFolderDialog from '../../components/layout/CreateFolderDialog';
+import PDFSummaryDialog from '../../components/layout/PDFSummaryDialog';
 
 
 import { useFileManager } from '../../hooks/useFileManager';
@@ -36,7 +40,10 @@ import {
   getSharedFiles,
   getFileUrl,
   toggleStar,
-  deleteFile
+  deleteFile,
+  getTrash,
+  restoreFile,
+  emptyTrash
 } from '../../services/fileService';
 
 
@@ -50,6 +57,8 @@ const Dashboard = ({ mode = 'home' }) => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [folderDialogOpen, setFolderDialogOpen] = useState(false);
+  const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
+  const [summaryFile, setSummaryFile] = useState(null);
   
   const { folderId } = useParams();
   const location = useLocation();
@@ -67,7 +76,11 @@ const Dashboard = ({ mode = 'home' }) => {
       
       if (mode === 'shared') {
         fetchedFiles = await getSharedFiles();
-      } else {
+      }
+      else if (mode === 'trash') {
+        fetchedFiles = await getTrash();
+      }
+       else {
         fetchedFiles = await getFiles(folderId);
       }
       
@@ -138,15 +151,63 @@ const Dashboard = ({ mode = 'home' }) => {
     handleMenuClose();
   };
   
-  const handleDelete = async () => {
+  const handleDelete = async (fileId, permanent = false) => {
     try {
-      await deleteFile(contextFile.id);
+      // Use fileId parameter if provided, otherwise use contextFile.id
+      const idToDelete = fileId || contextFile?.id;
+      
+      // Make sure we have a valid ID
+      if (!idToDelete) {
+        console.error('No valid file ID for deletion');
+        return;
+      }
+      
+      // Convert to string if it's not already a string
+      const idString = typeof idToDelete === 'string' ? idToDelete : idToDelete.toString();
+      
+      // Confirm if permanent deletion
+      if (permanent && !window.confirm('Are you sure you want to permanently delete this item? This action cannot be undone.')) {
+        return;
+      }
+      
+      // Log the ID being sent for debugging
+      
+      await deleteFile(idString, permanent);
       fetchFiles(); // Refresh files
       handleMenuClose();
     } catch (error) {
       console.error('Error deleting file:', error);
     }
   };
+  
+  // Add handle restore function
+  const handleRestore = async (fileId) => {
+    try {
+      await restoreFile(fileId);
+      fetchFiles();
+    } catch (error) {
+      console.error('Error restoring file:', error);
+    }
+  };
+
+  // Add handle empty trash function
+  const handleEmptyTrash = async () => {
+    if (window.confirm('Are you sure you want to permanently delete all items in trash? This action cannot be undone.')) {
+      try {
+        await emptyTrash();
+        fetchFiles();
+      } catch (error) {
+        console.error('Error emptying trash:', error);
+      }
+  }
+};
+
+  // Add function to open summary dialog
+  const handleOpenSummary = (file) => {
+    setSummaryFile(file);
+    setSummaryDialogOpen(true);
+  };
+
   
   // Dialogs
   const handleOpenUploadDialog = () => setUploadDialogOpen(true);
@@ -211,7 +272,21 @@ const Dashboard = ({ mode = 'home' }) => {
         />
         
         <Box sx={{ p: 3, flexGrow: 1, overflow: 'auto' }}>
-          {/* Action buttons */}
+        {/* Action buttons */}
+        {/* Place the trash buttons here, before your existing buttons */}
+        {mode === 'trash' ? (
+          <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
+            <Button
+              variant="contained"
+              color="error"
+              startIcon={<DeleteForeverIcon />}
+              onClick={handleEmptyTrash}
+              disabled={files.length === 0}
+            >
+              Empty Trash
+            </Button>
+          </Box>
+        ) : (
           <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
             <Button
               variant="contained"
@@ -230,6 +305,7 @@ const Dashboard = ({ mode = 'home' }) => {
               Upload Files
             </Button>
           </Box>
+        )}
           
           {/* Content area */}
           {loading ? (
@@ -390,31 +466,77 @@ const Dashboard = ({ mode = 'home' }) => {
       
       {/* File menu */}
       <Menu
-        anchorEl={menuAnchorEl}
-        open={Boolean(menuAnchorEl)}
-        onClose={handleMenuClose}
-      >
-        {!contextFile?.isFolder && (
-          <MenuItem onClick={handleDownload}>
-            <ListItemIcon>
-              <DownloadIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Download</ListItemText>
-          </MenuItem>
-        )}
-        <MenuItem onClick={handleShare}>
+      anchorEl={menuAnchorEl}
+      open={Boolean(menuAnchorEl)}
+      onClose={handleMenuClose}
+     >
+    {mode === 'trash' ? (
+    <>
+      <MenuItem onClick={() => {
+        handleRestore(contextFile.id);
+        handleMenuClose();
+      }}>
+        <ListItemIcon>
+          <RestoreIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText>Restore</ListItemText>
+      </MenuItem>
+      <MenuItem onClick={() => {
+        handleDelete(contextFile.id, true); // Pass true for permanent deletion
+        handleMenuClose();
+      }}>
+        <ListItemIcon>
+          <DeleteForeverIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText>Delete Permanently</ListItemText>
+      </MenuItem>
+    </>
+  ) : (
+    <>
+      {!contextFile?.isFolder && (
+        <MenuItem onClick={() => {
+            handleDownload();
+            handleMenuClose();
+         }}>
           <ListItemIcon>
-            <ShareIcon fontSize="small" />
+            <DownloadIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Share</ListItemText>
+          <ListItemText>Download</ListItemText>
         </MenuItem>
-        <MenuItem onClick={handleDelete}>
+      )}
+      {/* Add the PDF summary menu item here */}
+      {contextFile?.type?.includes('pdf') && (
+        <MenuItem onClick={() => {
+          handleOpenSummary(contextFile);
+          handleMenuClose();
+        }}>
           <ListItemIcon>
-            <DeleteIcon fontSize="small" />
+            <DescriptionIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Delete</ListItemText>
+          <ListItemText>View Summary</ListItemText>
         </MenuItem>
-      </Menu>
+      )}
+      <MenuItem onClick={() => {
+        handleShare();
+        handleMenuClose();
+      }}>
+        <ListItemIcon>
+          <ShareIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText>Share</ListItemText>
+      </MenuItem>
+      <MenuItem onClick={() => {
+          handleDelete(contextFile.id, false);
+          handleMenuClose();
+        }}>
+        <ListItemIcon>
+          <DeleteIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText>Move to Trash</ListItemText>
+      </MenuItem>
+    </>
+  )}
+     </Menu>
       
       {/* Dialogs */}
       <FileUploadDialog
@@ -429,6 +551,15 @@ const Dashboard = ({ mode = 'home' }) => {
           open={shareDialogOpen}
           onClose={() => setShareDialogOpen(false)}
           file={contextFile}
+        />
+      )}
+
+      {/* Add the PDF Summary Dialog here */}
+      {summaryDialogOpen && summaryFile && (
+        <PDFSummaryDialog
+          open={summaryDialogOpen}
+          onClose={() => setSummaryDialogOpen(false)}
+          file={summaryFile}
         />
       )}
       

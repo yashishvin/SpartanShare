@@ -41,13 +41,13 @@ const SideNavigation = () => {
       }}
     >
       <Box sx={{ p: 2 }}>
-        <Button 
+        {/* <Button 
           variant="outlined" 
           fullWidth 
           sx={{ mb: 2 }}
         >
           + New
-        </Button>
+        </Button> */}
         
         <List component="nav">
           <SidebarItem 

@@ -65,6 +65,12 @@ export const shareFile = async (fileId, email, permission = 'viewer') => {
 
 // Delete a file
 export const deleteFile = async (fileId, permanent = false) => {
+  
+  if (!fileId || typeof fileId !== 'string') {
+    console.error('Invalid fileId:', fileId);
+    throw new Error('Invalid file ID');
+  }
+  console.log('File ID:', fileId);
   const url = permanent ? 
     `/files/${fileId}?permanent=true` : 
     `/files/${fileId}`;
@@ -76,5 +82,29 @@ export const deleteFile = async (fileId, permanent = false) => {
 // Toggle star status
 export const toggleStar = async (fileId) => {
   const response = await api.patch(`/files/${fileId}/star`);
+  return response.data;
+};
+
+// Get PDF summary
+export const getPDFSummary = async (fileId) => {
+  const response = await api.get(`/files/${fileId}/summary`);
+  return response.data.summary;
+};
+
+// Get files in trash
+export const getTrash = async () => {
+  const response = await api.get('/files/trash');
+  return response.data.files;
+};
+
+// Restore file from trash
+export const restoreFile = async (fileId) => {
+  const response = await api.post(`/files/${fileId}/restore`);
+  return response.data;
+};
+
+// Empty trash
+export const emptyTrash = async () => {
+  const response = await api.delete('/files/trash/empty');
   return response.data;
 };
