@@ -32,6 +32,7 @@ import FileUploadDialog from '../../components/layout/FileUploadDialog';
 import ShareDialog from '../../components/layout/ShareDialog';
 import CreateFolderDialog from '../../components/layout/CreateFolderDialog';
 import PDFSummaryDialog from '../../components/layout/PDFSummaryDialog';
+import WatchPartyHome from '../WatchParty/WatchPartyHome'; // adjust the path as needed
 
 
 import { useFileManager } from '../../hooks/useFileManager';
@@ -71,6 +72,7 @@ const Dashboard = ({ mode = 'home' }) => {
   }, [folderId, mode, location.pathname]);
   
   const fetchFiles = async () => {
+    if (mode === 'watchparty') return;
     setLoading(true);
     try {
       let fetchedFiles = [];
@@ -251,14 +253,16 @@ const Dashboard = ({ mode = 'home' }) => {
       return <FileIcon sx={{ color: '#757575' }} fontSize="large" />;
     }
   };
-  
+
   return (
     <Box sx={{ display: 'flex', height: '100vh' }}>
       {/* Sidebar */}
       <SideNavigation />
       
       {/* Main content */}
-      <Box
+      {mode === "watchparty" ?
+        <WatchPartyHome />
+      : <Box
         component="main"
         sx={{
           flexGrow: 1,
@@ -471,6 +475,7 @@ const Dashboard = ({ mode = 'home' }) => {
           )}
         </Box>
       </Box>
+      }
       
       {/* File menu */}
       <Menu

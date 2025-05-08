@@ -7,6 +7,8 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 // Pages
 import Login from './pages/Auth/Login';
 import Dashboard from './pages/Dashboard/Dashboard'; // You'll need to create this
+import WatchPartyHome from './pages/WatchParty/WatchPartyHome';
+import WatchPartyRoom from './pages/WatchParty/WatchPartyRoom';
 
 function App() {
   return (
@@ -22,7 +24,9 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/folder/:folderId" element={<Dashboard />} />
               <Route path="/shared" element={<Dashboard mode="shared" />} />
-              <Route path="/watchparty" element={<Dashboard mode="watchparty" />} />
+              {/* <Route path="/watchparty" element={<Dashboard mode="watchparty" />} /> */}
+              <Route path="/watchparty" element={<WatchPartyHome />} />
+              <Route path="/watchparty/:roomName" element={<WatchPartyRoom />} />
               <Route path="/trash" element={<Dashboard mode="trash" />} />
               {/* Add more protected routes here */}
             </Route>
