@@ -1,25 +1,82 @@
-const mongoose = require('mongoose')
-const fileSchema = new mongoose.Schema({
-    fileId: {
-        type: String,
-        required: true
+// backend/models/File.js
+const mongoose = require('mongoose');
+
+const FileSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  type: {
+    type: String,
+    required: true
+  },
+  size: {
+    type: Number,
+    required: true
+  },
+  path: {
+    type: String,
+    required: true
+  },
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  parent: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'File',
+    default: null
+  },
+  isFolder: {
+    type: Boolean,
+    default: false
+  },
+  starred: {
+    type: Boolean,
+    default: false
+  },
+  sharedWith: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
     },
-    filename: {
-        type: String,
-        required: true
-    },
-    //TODO: We could add a reference to an s3 bucket URL here
-    owner: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    sharedWith: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-    typeOfFile: {
-        type: String,
-        required: true
-    },
-    isStarred: { type: Boolean, default: false },
-    createdAt: { type: Date, default: Date.now },
-    lastModifieddate: {
-        type: Date,
-        default: Date.now
+    permission: {
+      type: String,
+      enum: ['viewer', 'editor'],
+      default: 'viewer'
     }
-})
-module.exportsmongoose.model('File', fileSchema)
+  }],
+  summary: {
+    mainPoints: [String],
+    summaryText: String,
+    topics: [String],
+    generated: {
+      type: Boolean,
+      default: false
+    },
+    generatedAt: {
+      type: Date,
+      default: null
+    }
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  },
+  deleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: {
+    type: Date,
+    default: null
+  }
+});
+
+module.exports = mongoose.model('File', FileSchema);
