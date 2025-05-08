@@ -32,6 +32,8 @@ import FileUploadDialog from '../../components/layout/FileUploadDialog';
 import ShareDialog from '../../components/layout/ShareDialog';
 import CreateFolderDialog from '../../components/layout/CreateFolderDialog';
 import PDFSummaryDialog from '../../components/layout/PDFSummaryDialog';
+import DocumentPreview from '../../components/layout/DocumentPreview';
+
 
 
 import { useFileManager } from '../../hooks/useFileManager';
@@ -60,6 +62,8 @@ const Dashboard = ({ mode = 'home' }) => {
   const [folderDialogOpen, setFolderDialogOpen] = useState(false);
   const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
   const [summaryFile, setSummaryFile] = useState(null);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
   
   const { folderId } = useParams();
   const location = useLocation();
@@ -118,9 +122,39 @@ const Dashboard = ({ mode = 'home' }) => {
       navigate(`/folder/${file.id}`);
     } else {
       setSelectedFile(file.id === selectedFile ? null : file.id);
+      
+      // Add preview functionality for non-folder files
+      const type = file.type?.toLowerCase() || '';
+      const isPreviewable = type.includes('pdf') || 
+                            type.includes('image') || 
+                            type.includes('jpeg') || 
+                            type.includes('jpg') || 
+                            type.includes('png') || 
+                            type.includes('gif') ||
+                            type.includes('doc') ||
+                            type.includes('docx') ||
+                            type.includes('txt');
+      
+      if (isPreviewable) {
+        handleOpenPreview(file, null);
+      }
     }
   };
   
+  const handleOpenPreview = (file, event ) => {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault(); // Add preventDefault to ensure no default action occurs
+    }
+
+    setPreviewFile(file);
+    setPreviewDialogOpen(true);
+  };
+  
+  const handleClosePreview = () => {
+    setPreviewDialogOpen(false);
+  };
+
   const handleMenuOpen = (event, file) => {
     event.stopPropagation();
     setContextFile(file);
@@ -132,7 +166,12 @@ const Dashboard = ({ mode = 'home' }) => {
     setContextFile(null);
   };
   
-  const handleDownload = async () => {
+  const handleDownload = async ( event ) => {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    
     try {
       const url = await getFileUrl(contextFile.id);
       window.open(url, '_blank');
@@ -502,16 +541,30 @@ const Dashboard = ({ mode = 'home' }) => {
   ) : (
     <>
       {!contextFile?.isFolder && (
-        <MenuItem onClick={() => {
-            handleDownload();
-            handleMenuClose();
-         }}>
+        <>
+        {/* Add Preview option to the menu */}
+        <MenuItem onClick={( event ) => {
+          handleOpenPreview(contextFile, event );
+          handleMenuClose();
+        }}>
+          <ListItemIcon>
+            <DescriptionIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Preview</ListItemText>
+        </MenuItem>
+        
+        <MenuItem onClick={(event) => {
+          handleDownload(event);
+          handleMenuClose();
+        }}>
           <ListItemIcon>
             <DownloadIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>Download</ListItemText>
         </MenuItem>
+      </>
       )}
+
       {/* Add the PDF summary menu item here */}
       {contextFile?.type?.includes('pdf') && (
         <MenuItem onClick={() => {
@@ -568,6 +621,15 @@ const Dashboard = ({ mode = 'home' }) => {
           open={summaryDialogOpen}
           onClose={() => setSummaryDialogOpen(false)}
           file={summaryFile}
+        />
+      )}
+
+        {/* Add Document Preview Dialog */}
+        {previewDialogOpen && previewFile && (
+        <DocumentPreview
+          open={previewDialogOpen}
+          onClose={handleClosePreview}
+          file={previewFile}
         />
       )}
       
