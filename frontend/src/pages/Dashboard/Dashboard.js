@@ -49,6 +49,7 @@ import {
 
 const Dashboard = ({ mode = 'home' }) => {
   const [files, setFiles] = useState([]);
+  const [displayedFiles, setDisplayedFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('grid');
   const [selectedFile, setSelectedFile] = useState(null);
@@ -85,11 +86,16 @@ const Dashboard = ({ mode = 'home' }) => {
       }
       
       setFiles(fetchedFiles);
+      setDisplayedFiles(fetchedFiles);
     } catch (error) {
       console.error('Error fetching files:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = (searchResults) => {
+    setDisplayedFiles(searchResults);
   };
   
   // Get section title based on current location
@@ -269,6 +275,8 @@ const Dashboard = ({ mode = 'home' }) => {
           onFileUpdate={fetchFiles}
           onUploadClick={handleOpenUploadDialog}
           onCreateFolder={handleOpenFolderDialog}
+          files={files}
+          onSearch={handleSearch}
         />
         
         <Box sx={{ p: 3, flexGrow: 1, overflow: 'auto' }}>
@@ -315,14 +323,14 @@ const Dashboard = ({ mode = 'home' }) => {
           ) : files.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 8 }}>
               <FolderIcon sx={{ fontSize: 80, color: 'text.disabled', mb: 2 }} />
-              <Typography variant="h6">No files here yet</Typography>
+              <Typography variant="h6">{files.length === 0 ? 'No files here yet' : 'No matching files found'}</Typography>
               <Typography variant="body2" color="text.secondary">
                 Upload files or create a new folder to get started
               </Typography>
             </Box>
           ) : viewMode === 'grid' ? (
             <Grid container spacing={2}>
-              {files.map((file) => (
+              {displayedFiles.map((file) => (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={file.id}>
                   <Paper
                     elevation={1}
@@ -405,7 +413,7 @@ const Dashboard = ({ mode = 'home' }) => {
             </Grid>
           ) : (
             <Paper elevation={1}>
-              {files.map((file, index) => (
+              {displayedFiles.map((file, index) => (
                 <React.Fragment key={file.id}>
                   <Box
                     sx={{
